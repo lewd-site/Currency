@@ -1,4 +1,4 @@
-window.addEventListener('DOMContentLoaded', () => {
+(() => {
   const element = document.getElementById('price');
   if (element === null) {
     return;
@@ -16,4 +16,4 @@ window.addEventListener('DOMContentLoaded', () => {
 
   setInterval(updatePrice, 1000 * 60 * 10);
   updatePrice();
-});
+})();
