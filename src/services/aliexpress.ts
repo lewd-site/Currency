@@ -7,13 +7,20 @@ const USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64; rv:97.0) Gecko/20100101 Fire
 export class AliexpressService {
   public getPrice = async (): Promise<number | null> => {
     const readCookieResponse = await this._readCookie();
-    const writeCookieResponse = await this._writeCookie(readCookieResponse.location);
-    const response = await fetch(writeCookieResponse.location, {
-      headers: { Accept: ACCEPT, Cookie: writeCookieResponse.cookies, 'User-Agent': USER_AGENT },
-      follow: 1,
-    });
 
-    const html = await response.text();
+    let html;
+    if (readCookieResponse.location.length) {
+      const writeCookieResponse = await this._writeCookie(readCookieResponse.location);
+      const response = await fetch(writeCookieResponse.location, {
+        headers: { Accept: ACCEPT, Cookie: writeCookieResponse.cookies, 'User-Agent': USER_AGENT },
+        follow: 1,
+      });
+
+      html = await response.text();
+    } else {
+      html = readCookieResponse.text;
+    }
+
     const matches = html.match(/price:(\d+\.\d+);currency:RUB/i);
     if (matches === null) {
       return null;
@@ -22,15 +29,16 @@ export class AliexpressService {
     return +matches[1];
   };
 
-  protected _readCookie = async (): Promise<{ location: string }> => {
+  protected _readCookie = async (): Promise<{ location: string; text: string }> => {
     const response = await fetch(config.aliexpress.itemUrl, {
       headers: { Accept: ACCEPT, 'User-Agent': USER_AGENT },
       redirect: 'manual',
     });
 
     const location = response.headers.get('location') || '';
+    const text = await response.text();
 
-    return { location };
+    return { location, text };
   };
 
   protected _writeCookie = async (url: string): Promise<{ location: string; cookies: string }> => {
